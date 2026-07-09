@@ -1,0 +1,1650 @@
+---
+title: "winterii analysis"
+author: "Alice Palmer"
+date: "12/16/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Methods
+##Crosses
+Plants from the parental (P) generation were crossed to produce the individuals used in this analysis. As flowerheads on the parental plants approached maturity, they were covered to prevent accidental pollination. Researchers then uncovered mature flowerheads rubbed the flowerheads against each other, attempting to ensure pollen was transferred to each active stigma. Following crossing, flowerheads were covered and the seeds allowed to develop. 
+
+The following crosses were generated:
+*	H. winterii intrapopulation
+*	H. winterii x H. annuus (sympatric to H. winterii)
+*	H. winterii x H. annuus (allopatric to H. winterii)
+*	H. annuus (sympatric to H. winterii) intrapopulation
+*	H. annuus (sympatric to H. winterii) x H. annuus (allopatric to H. winterii)
+*	H. annuus (allopatric to H. winterii) intrapopulation
+
+Each cross was conducted with plants of both populations as the seed parent and pollen parent, and seeds were separated to control for maternal effects.
+
+##Germination
+To test whether parentage affected the proportion of seeds that germinate, seeds were scarified, then germinated at 25 degrees C. Seeds were germinated on filter paper in 110 mm petri dishes, with approximately 30 seeds per dish. There were four blocks, each of which contained seeds from two individuals per cross and direction, except in the cases of crosses which did not produce enough seeds for replication in each block. 
+
+Seeds were stored in dark conditions for 3 days, then transferred to a 16/8 day-night cycle. Initially, 2 mL of distilled water was added to each dish, with an additional 1 mL of water added daily. Seeds were monitored for germination daily. 
+
+##Drought growth experiment
+Growth rate is a marker of plant success and competitive ability. In order to test whether parentage affected growth under normal and drought conditions in the F1 plants, seeds from the germination were planted. Plants were grown in 10 blocks, with members of each cross in each block and locations randomized. Plants were grown in 1.5 inch cone-tainers in sterilized peat-based media. At 20 days, all plants were fertilized.
+
+All plants were watered to saturation 3 times per week. At 13 days, plants were divided into control, drought, and no-water treatments. The no-water treatment will be discussed in the following section. The control plants continued to be watered 3 times per week. The drought plants were watered 1-2 times per week, based on a subjective assessment of wilting. 
+
+Plant height from base to apex was measured weekly for 3 weeks, then once after 4 days. The number of leaves per plant was measured weekly for a period of 2 weeks. 
+
+##Dry down experiment
+The plants in the no-water treatment were grown under the same conditions as the control plants, as described above, for 40 days. Then watering was stopped. Plants were monitored daily for 26 days for permanent wilting, which was defined as >90 degree wilting of the apex, loss of turgor in all leaves, and complete desiccation of at least some leaves.
+
+##Pollen staining
+Researchers collected pollen from plants from the drought experiment. Only plants from 5 of the blocks were selected. Pollen was collected from 1-3 flowers per plant. Pollen was stained to determine viability: stained grains are viable pollen, while unstained grains are not. 
+
+##Analysis
+###Overall analytical framework and model design:
+I used mixed effects models to analyze all experimental data. As described above, the plants in each experiment were grouped into blocks in the growth chambers and greenhouse. These blocks may have experienced somewhat different environmental conditions that influenced phenotype, so it was important I account for similarity within blocks during my analysis. However, I am interested in response at the level of the individual plants, not the level of block. Therefore, rather than calculate average phenotype per block, I constructed variable-intercept mixed models, using block as a random effect. Mixed effects models can be used as a compromise between pooling all data within a replicate--in this case, a block--and treating each individual within a block as if it were fully independent of the others. Mixed effect models treat random effect values as values drawn from a distribution specific to the level of the random effect and relative to the grand mean. (Gelman and Hill 2007). 
+
+Because I am interested in effects at the level of individual plants, I mainly conducted my analyses within a Bayesian inferential framework. Mixed models allow for prediction of effects on pseudoreplicates, and this process is most natural in a Bayesian context (Lazic et al. 2019). However, I conducted some analyses in a maximum likelihood framework due to technical limitations (see code in Results section). Because this is, to my knowledge, the first study of viability and fertility traits in H. winterii or H. winterii--H. annuus crosses, I used flat priors.  
+
+Parentage may impact the viability and survival of the F1 plants in several different ways. Because I am primarily interested in the development of reproductive barriers between H. annuus and H. winterii, I am most interested in the differences between the offspring of intrapopulation crosses and interpopulation crosses. That is, do H. winterii--H. annuus hybrid offspring have reduced viability and fertility relative to non-hybrid offspring or offspring of the sympatric H. annuus to allopatric H. annuus cross?
+
+However, other effects of parentage are possible. It is possible that parentage will have an additive effect. For instance, having a single H. winterii parent may confer a degree of drought tolerance regardless of the other parent's identity. Finally, it is possible that the identity of the maternal parent will play a greater role in offspring phenotype than that of the paternal parent, due to differences in seed provisioning and dispersal between populations (maternal effects). 
+
+Therefore, in order to be able to detect potential additive effects of parentage and maternal effects, I used the identity of each F1's maternal and paternal parents as predictor variables, rather than the overall cross. For each experiment, I fit both a model with an interaction effect between parents and a main effects only model. I also fit a null model with random effects only. 
+
+In order to evaluate the importance of each predictor variable on phenotype, I used leave-one-out cross validation to compare the logwise predictive density of each model. This method uses posterior parameter simulations to estimate out-of-sample fits, and is more robust to weak priors (Vehtari et. al 2017). I chose to use model comparison to evaluate my models because predicting the phenotypes of new organisms is natural in a Bayesian context, and so I am interested in evaluating how effective each model is in predicting out-of-sample data. 
+
+If the interaction model is more predictive than the main effect model, that will indicate that differences in compatibility between the populations may affect offspring phenotype. This in turn would indicate that reproductive isolation is developing. At the same time, if the additive effects model is more predictive, that will indicate that while parent identity affects phenotype, the combination of parents does not matter. This would suggest that there is little reproductive isolation, but there are differences in phenotype between populations due to population structure. If this is the case, I will examine the additive model further to see if the maternal parent has a stronger main effect than paternal parent, indicating maternal effects on phenotype. 
+
+Finally, if neither model is more predictive than the null model, it would indicate that neither additive parent identity nor the interaction between parents influences phenotype. This would suggest that there is little reproductive isolation between the ecotypes, and little population structure in traits that influence the phenotypes I am measuring. 
+
+###Germination analysis:
+In order to assess whether parentage affected the proportion of F1 seeds that germinated, I fit a mixed model with maternal and paternal population as fixed effects predictor variables, block as a random effect, and proportion germinated as a response variable.
+
+Because proportion germinated represents the number of successes in a series of independent events, I initially used a binomial error distribution to model error. However, my model was overdispersed, so I then moved to a beta binomial error distribution, since this distribution is more robust to overdispersed data.
+
+###Drought height growth:
+In order to assess the effects of parentage on in offspring growth in height, and how those effects interact with environment, I fit a mixed model with maternal population, paternal population, and condition (drought or well-watered) as fixed effects predictor values, block as a random effect, and change in height over the course of the experiment as a response variable. Because H. winterii and H. annuus are expected to have different responses to drought, I treated condition as an interaction term in both the model with an interaction between parents and the model with additive effects of parent. In addition to the null model in which only random effect predicted response, I fitted a model in which condition (as a fixed effect) and block (as a random effect) were the only predictors. This allowed me to compare models with parentage and condition to models with condition alone, to test whether parentage had an effect beyond that of drought, and models with condition to a null model, to test whether the drought was strong enough to impact phenotype. 
+
+###Drought leaf growth: 
+In order to assess the effects of parentage on offspring leaf growth, and how those effects varied by environment, I fit a mixed model with maternal population, paternal population, and condition as fixed effects predictor variables, and block as a random effect. I used the change in log difference of leaf number per day as a response variable, as this is a common measure of growth rate in plant physiology literature. 
+
+As in the height growth analyis, I treated condition as an interaction term in both the model with an interaction between parents and the model with additive effects of parent because the two ecotypes are expected to have different responses to drought. In addition to the null model in which only random effect predicted response, I fitted a model in which condition (as a fixed effect) and block (as a random effect) were the only predictors. This allowed me to compare models with parentage and condition to models with condition alone, to test whether parentage had an effect beyond that of drought, and models with condition to a null model, to test whether the drought was strong enough to impact phenotype. 
+
+###Dry down experiment:
+In order to test the effects of parentage on offspring drought survival, I fit a mixed model with a maternal and paternal population as fixed effects predictor variables, block as a random effect, and days to death as a response variable. Days to death is a measure of the days between the cessation of watering and permanent wilting over a period of 26 days. Because I was working with count data, I fit all models using a Poisson distribution. 
+
+###Viable pollen production:
+In order to test the effects of parentage on F1 fertility, I compared the proportion of stained and unstained grains to assess viable pollen production. While pollen was collected from multiple flowers per plant in succession, the plants did not bloom synchronously. Therefore, pollen collected from the first flower of a plant did not experience the same environment as the first flower of all other plants. As a result, variation within plants is not of interest, so I averaged the proportion of pollen grains stained per plant. 
+
+I fit a model with maternal and paternal population as fixed effects predictor variables, block as a random effect, and mean stained grains per plant as a response variable. Because I am working with proportion data, I used a binomial error distribution. However, the resulting model was overdispersed, so I refit the model using a beta-binomial distribution. This resulted in a model that failed to converge. 
+
+
+```{r loading libraries}
+library(purrr)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(car)
+library(visreg)
+library(naniar)
+library(brms)
+library(emmeans)
+library(loo)
+library(modelr)
+library(lme4)
+library(bayesplot)
+library(tidybayes)
+library(DHARMa)
+library(rstan)
+library(StanHeaders)
+library(glmmTMB)
+```
+
+
+```{r vectors for cross renaming}
+#make vectors for the crosses with each species as mom
+Hwmom <- c("A_a", "A_b", "B_a", "C_a")
+Hamom <- c("B_b", "D_a", "D_b", "E_a")
+Pumpmom <- c("C_b", "E_b", "F_a", "F_b")
+
+#make vectors for different fathers of crosses
+Hwdad <- c("A_a", "A_b", "B_b", "C_b")
+Hadad <- c("B_a", "D_a", "D_b", "E_b")
+Pumpdad <- c("C_a", "E_a", "F_a", "F_b")
+
+#set number of cores for STAN
+options(mc.cores = parallel::detectCores() - 1)
+```
+#Results
+
+##Do crosses between H. winteri and H. annuus set seeds at lower rates than those from crosses within H. winteri and H. annuus?
+
+```{r seed set data wrangling}
+#read in data
+seeds <- read.csv("fig2_seedset.csv") #file renamed to fig2_seedset.csv
+str(seeds)
+summary
+
+#clean up names
+library(janitor)
+seeds <- seeds %>% clean_names()
+#that left the spaces in mother and father columns
+#I'll just have to deal with that in stringr
+
+#I want to look at good seeds:total seeds as a response variable
+#and cross as a predictor variable (six crosses)
+#I also want to use cross with sex of parent taken into account (winteri mom with pumpkin dad etc) <- this is mostly what I've been looking at so this is more important
+
+#I'll deal with the predictor variable stuff first #####
+#need mom_pop and dad_pop columns
+#make a new column with the first two characters from each value in mother
+
+library(stringr)
+seeds <- seeds %>% 
+  mutate(mom_pop = str_sub(mother, 1, 2 # <- sub_str takes the first two characters and copies them to a new column mom_pop made by mutate
+  )) 
+#did that work?
+unique(seeds$mom_pop)
+#looks like it! 
+
+seeds <- seeds %>% 
+  mutate(dad_pop = str_sub(father, 1, 2 # <- sub_str takes the first two characters and copies them to a new column dad_pop made by mutate
+  )) 
+#did that work?
+unique(seeds$dad_pop)
+#nice 
+
+#all right response variable time #####
+
+#need to deal with all the NAs. 
+#most work will be done on a dataset with the plants with no counted seeds removed
+
+#remove NAs from good_seeds and bad_seeds
+seeds_cleaned <- seeds %>% 
+  drop_na(good_seeds) %>% 
+  drop_na(bad_seeds)
+
+#in some rows, there are values for good seeds and bad seeds but not weird seeds
+#I think that probably those flowerheads actually didn't have NAs
+#and will change that value to 0
+
+seeds_cleaned <- seeds_cleaned %>% 
+  mutate(weird_seeds = ifelse(is.na(weird_seeds), 0, weird_seeds)) 
+#if value in weird_seeds is NA, replace with 0
+
+#making a total seeds column
+seeds_cleaned <- seeds_cleaned %>% 
+  mutate(total_seeds = good_seeds + bad_seeds + weird_seeds)
+#looks good
+
+#making a good seeds: total seeds column
+seeds_cleaned <- seeds_cleaned %>% 
+  mutate(good_seeds_ratio = good_seeds/total_seeds)
+
+#except that the actual replicate is the plant, not the seeds
+#so need to look at seeds per cross per plant as response variable
+#it's not great that these aren't the same number per plant
+#but better that than the pseudoreplication
+#will also need to include number of flowers per plant in model
+#since this may affect seed production
+
+#need to make a column that has mom and dad ids together
+#then group by that column
+#then calculate mean good_seeds_ratio for those groups
+# == mean good seeds ratio for all flowerheads crossed for each combo of parents
+
+seeds_cleaned <- seeds_cleaned %>% 
+  mutate(mom_dad = str_c(mother, "_", father)) %>% 
+  group_by(mom_dad) %>% 
+  mutate(mean_seed_ratio = mean(good_seeds_ratio)) %>% 
+  ungroup()
+
+#do the same with good seeds and total seeds
+seeds_cleaned <- seeds_cleaned %>% 
+  group_by(mom_dad) %>% 
+  mutate(mean_good_seeds = mean(good_seeds)) %>% 
+  mutate(mean_total_seeds = mean(total_seeds)) %>% 
+  mutate(total_good_seeds = sum(good_seeds)) %>% 
+  mutate(total_total_seeds = sum(good_seeds)) %>% 
+  ungroup()
+
+#need to make a column with the number of flowerheads from each mother plant
+#if each cross was one flowerhead 
+#I could simply group by mother, then make a column that was n() of each mother
+#but some crosses involve two or three flowerheads
+#so what I actually need to do is 
+#group by mother
+#make a column that is sum(flowerheads)
+
+#how come some crosses are put multiple times
+#(eg mom HW3.2 x dad HA4.4) in different rows with one flowerhead each
+#and other times it's one row, flowerhead = 2
+#weird but doesn't change what I have to do hopefully
+
+seeds_cleaned <- seeds_cleaned %>% 
+  group_by(mother) %>% 
+  mutate(mom_flower_count = sum(flowerheads)) %>% 
+  ungroup()
+
+#add a column that is sample number
+seeds_cleaned <- seeds_cleaned %>% 
+  mutate(sample_number = 1:354) #354 rows
+
+# look at the number of crosses per cross
+
+seeds_cleaned %>% 
+  group_by(mother, father) %>% 
+  summarise(n = n ()) %>% 
+  arrange(desc(n))
+
+#great! now onto plotting
+```
+
+I've cleaned up the data, created predictor variables for mom_pop and dad_pop, and created response variable good seeds: total seeds. Now I will plot the data and look for trends.
+
+```{r seeds set plotting}
+seeds_plot1 <- ggplot(data=seeds_cleaned,
+                       aes(x=mom_pop, #mom_pop is probably more important because of maternal effects
+                           y=mean_seed_ratio,
+                           color=dad_pop))+ #trying all the data together
+  geom_jitter() +
+  scale_color_viridis_d()+ #viridis is easy to read and also a sort of sunflower-y palette
+  theme_light() #makes it easier to read without the background
+
+seeds_plot1 #hard to see an obvious pattern, but looks like something's going on. trying again with facets
+
+#now trying with facets to see if that's easier to read
+seeds_plot2 <- ggplot(data=seeds_cleaned,
+                       aes(x=dad_pop, 
+                           y=mean_seed_ratio,
+                           color=dad_pop))+
+  geom_jitter()+
+  scale_color_viridis_d()+
+  facet_wrap(~mom_pop)+ #since the mom pop might be more important, that makes more sense to be the facets 
+  theme_light() #makes it easier to read without the background
+
+seeds_plot2 #hard to see an obvious pattern
+```
+
+
+```{r seeds full model}
+#Fit a model 
+#in which we have no random effects (there are no blocks, and we've averaged per plant)
+#mom_pop, dad_pop, and number of flowerheads per mom are fixed effects
+#and mean good seeds ratio per individual cross is the response variable
+
+#can use total good seeds as response variable with total total seeds as an offset <-- this would be a poisson error distribution
+#since total total seeds are already included, don't necessarily need flowerheads per mom as a covariate
+seedset_lm <- brm(total_good_seeds ~ mom_pop*dad_pop +offset(log(total_total_seeds)),
+                     family = poisson(link="identity"),
+                     data = seeds_cleaned,
+                     file = "../brms_fits/winterii_seedset_lm1",
+                     chains = 3)
+
+#bayes assumptions
+
+#visually investigate chains
+plot(seedset_lm) #looks fine
+plot(seedset_lm, variable = "b_Intercept") #Looks good
+
+mcmc_trace(seedset_lm) #looks fine
+
+#Look at a diagnostic of convergence 
+rhat(seedset_lm)
+rhat(seedset_lm) %>% mcmc_rhat() #Looks fine
+
+# assess autocorrelation 
+
+mcmc_acf(seedset_lm) #looks fine 
+
+#model assumptions
+
+#data matches chains
+pp_check(seedset_lm, "dens_overlay")
+#not really the right shape. I'm not sure how to assess this with poisson distributed models
+
+#is error normal
+pp_check(seedset_lm, "error_hist", bins = 10) #mostly normal?? with some too-tall bins
+pp_check(seedset_lm, "error_scatter_avg")
+#Looks good
+
+#check fitted values vs residuals
+seedset_res <- residuals(seedset_lm) %>% as_tibble
+seedset_fit <- fitted(seedset_lm) %>% as_tibble
+
+plot(y = seedset_res$Estimate, x = seedset_fit$Estimate)
+#Looks pretty good
+
+seedset_model_check <- createDHARMa(
+  simulatedResponse = t(posterior_predict(seedset_lm)),
+  observedResponse = seeds_cleaned$total_good_seeds,
+  fittedPredictedResponse = apply(t(posterior_epred(seedset_lm)), 1, mean),
+  integerResponse = TRUE)
+
+plot(seedset_model_check)
+#oh wow these look REALLY bad
+#I guess it's because there are so many 100%s and 0%s and few intermediate values
+
+#rerun seedset with negbinomial distribution####
+seedset_lm2 <- brm(total_good_seeds ~ mom_pop*dad_pop +offset(log(total_total_seeds)),
+                     family = negbinomial(),
+                     data = seeds_cleaned,
+                     file = "../brms_fits/winterii_seedset_lm2",
+                     chains = 3)
+
+#bayes assumptions
+
+#visually investigate chains
+plot(seedset_lm2) #looks fine
+plot(seedset_lm2, variable = "b_Intercept") #Looks good
+
+mcmc_trace(seedset_lm2) #looks fine
+
+#Look at a diagnostic of convergence 
+rhat(seedset_lm2)
+rhat(seedset_lm2) %>% mcmc_rhat() #Looks fine
+
+# assess autocorrelation 
+
+mcmc_acf(seedset_lm2) #looks fine 
+
+#model assumptions
+
+#data matches chains
+pp_check(seedset_lm2, "dens_overlay")
+#nice! now it matches really well
+
+#is error normal
+pp_check(seedset_lm2, "error_hist", bins = 10) #looks good
+pp_check(seedset_lm2, "error_scatter_avg")
+#also very clustered around 0. looks like a volcano plot
+
+#check fitted values vs residuals
+seedset_res <- residuals(seedset_lm2) %>% as_tibble
+seedset_fit <- fitted(seedset_lm2) %>% as_tibble
+
+plot(y = seedset_res$Estimate, x = seedset_fit$Estimate)
+#clustered around 0
+
+seedset_model_check2 <- createDHARMa(
+  simulatedResponse = t(posterior_predict(seedset_lm2)),
+  observedResponse = seeds_cleaned$total_good_seeds,
+  fittedPredictedResponse = apply(t(posterior_epred(seedset_lm2)), 1, mean),
+  integerResponse = TRUE)
+
+plot(seedset_model_check2)
+
+```
+
+```{r seedset model comparison}
+#running all models with negative binomial distribution
+seedset_lm_m <- brm(total_good_seeds ~ mom_pop+dad_pop +offset(log(total_total_seeds)),
+                     family = negbinomial(),
+                     data = seeds_cleaned,
+                     file = "../brms_fits/winterii_seedset_lm_m2",
+                     chains = 3)
+
+seedset_lm_n <- brm(total_good_seeds ~ 1 +offset(log(total_total_seeds)),
+                     family = negbinomial(),
+                     data = seeds_cleaned,
+                     file = "../brms_fits/winterii_seedset_lm_n2",
+                     chains = 3)
+
+#compare models
+loo_seedset_lm <- loo(seedset_lm2) 
+loo_seedset_m <- loo(seedset_lm_m) 
+loo_seedset_n <- loo(seedset_lm_n) 
+
+loo_compare(loo_seedset_lm, loo_seedset_m, loo_seedset_n)
+#the null model is best, the full model worst, and the error bars seem not to be overlapping
+
+summary(seedset_lm)
+
+```
+
+##Do seeds from crosses between H. winterii and H. annuus germinate at lower rates than those from crosses within H. winterii and H. annuus?
+
+```{r proportion germinated check and plot}
+#read in data
+sprouts <- read.csv("fig2_germination.csv")
+#check data structure
+str(sprouts)
+summary(sprouts)
+#are there NAs?
+miss_var_summary(sprouts)
+#no
+
+#This dataset already has columns for mom population and dad population. Yay!
+
+#make block a factor 
+sprouts$block <-as.factor(sprouts$block)
+
+#plot data ####
+sprouts_plot <- ggplot(data=sprouts,
+                       aes(x=dad_pop, 
+                           y=proportion,
+                           color=block))+ #color is sort of the hardest aspect to read, relative to axes and facets, so the random effects will be color
+  geom_jitter()+
+  facet_wrap(~mom_pop)+ #since the mom pop might be more important, that makes more sense to be the facets 
+  scale_color_viridis_d()+ #viridis is easy to read and also a sort of sunflower-y palette
+  theme_light() #makes it easier to read without the background
+
+sprouts_plot #hard to see an obvious pattern
+
+#make a professional looking sprouts plot version for paper/posters
+
+#setting up variables for facet_wrap labeling
+#use str_replace_all to change variable names
+library(stringr)
+sprouts <- sprouts%>% 
+  mutate(mom_pop = str_replace_all(mom_pop, "HA", "Sympatric H. annuus")) %>% 
+  mutate(mom_pop = str_replace_all(mom_pop, "HW", "H. winteri")) %>% 
+  mutate(mom_pop = str_replace_all(mom_pop, "Pump", "Allopatric H. annuus")) 
+
+sprouts_prof_plot <- ggplot(data=sprouts,
+                       aes(x=dad_pop, 
+                           y=proportion,
+                           color=dad_pop))+ #both germination and drought deaths have blocks, so I'll leave it
+  geom_boxplot(outliers=F)+
+  geom_jitter(size=0.3, alpha=0.8)+
+  facet_wrap(~mom_pop)+ 
+  scale_color_manual(values = c("HW" = "#225ea8",
+                                "HA" ="#a1d99b",
+                                "Pump"="#31a354"))+ 
+  theme_light(base_size=6) +
+  xlab("")+ #need to add axis/facet/key labels
+  ylab("Proportion Germinated")+
+  scale_x_discrete(labels = c('Sympatric H. annuus','H. winteri','Allopatric H. annuus'))+#makes x axis labels neater
+  theme(legend.position="none")+
+  theme(axis.text.x=element_text(angle = 25, hjust = 0.82))+
+  ggtitle("A")
+
+sprouts_prof_plot
+ggsave("sprouts_prof_plot.png", width=10, height= 6, units="in")
+#for Mol Ecol submission
+#ggsave("/home/alice/Desktop/Grad_School_Files/Research/winterii/sequencedata/AlignedData/figures/sprouts_prof_plot.pdf", width=80, height= 48, units="mm")
+ggsave("/home/alice/Documents/grad_school_files/winteri_figures/sprouts_box_plot.pdf", width=80, height= 48, units="mm") #gingerzest filepath
+
+```
+
+Modeling using poisson distribution and count data
+```{r seed germination poisson distribution model}
+#fit model and test assumptions ####
+
+#fit a mixed model
+#with mom_pop and dad_pop as fixed effects
+#and block as a random effect
+#number germinated as the response variable
+#and total number of seeds as an offset
+#the offset compensates for the differing total number of seeds, turning the count into a rate
+
+#with a poisson distribution because these are count data
+
+sprout_lm <- brm(germinated ~ mom_pop*dad_pop + offset(log(total)) + (1|block), #using log(total) because offsets use logs
+                     family = poisson(link="identity"),
+                     data = sprouts,
+                     file = "../brms_fits/winterii_sprout_lm_poisson",
+                     chains = 3,)
+#bayes assumptions
+
+#visually investigate chains
+plot(sprout_lm) #looks fine
+plot(sprout_lm, variable = "b_Intercept") #Looks good
+
+mcmc_trace(sprout_lm) #looks fine
+
+#Look at a diagnostic of convergence 
+rhat(sprout_lm)
+rhat(sprout_lm) %>% mcmc_rhat() #Looks fine
+
+# assess autocorrelation 
+
+mcmc_acf(sprout_lm) #looks fine 
+
+#model assumptions
+
+#data matches chains' predictions
+pp_check(sprout_lm, "dens_overlay")
+#not really the right shape. seems underdispersed? will check with dharma. 
+
+#is error normal
+pp_check(sprout_lm, "error_hist", bins = 10) #looks good
+pp_check(sprout_lm, "error_scatter_avg")
+#Looks good
+
+#check fitted values vs residuals
+sprout_res <- residuals(sprout_lm) %>% as_tibble
+sprout_fit <- fitted(sprout_lm) %>% as_tibble
+
+plot(y = sprout_res$Estimate, x = sprout_fit$Estimate)
+#seems to decrease at higher values.
+ 
+#Are residuals normal and homoskedastic?
+sprout_model_check1 <- createDHARMa(
+  simulatedResponse = t(posterior_predict(sprout_lm)),
+  observedResponse = sprouts$germinated,
+  fittedPredictedResponse = apply(t(posterior_epred(sprout_lm)), 1, mean),
+  integerResponse = TRUE)
+
+plot(sprout_model_check1)
+
+#model is underdispersed.
+#trying with comway maxwell poisson distribution, which can handle both over and under dispersion
+
+#since com poisson won't work in brms I'll do it in glmmTMB###
+
+library(glmmTMB)
+sprout_lm_compois <- glmmTMB(germinated ~ mom_pop *dad_pop + (1|block) + offset(log(total)), data=sprouts, family=compois(), control = glmmTMBControl(parallel = 7))
+
+#Check assumptions
+#Check distribution of predictions matches data
+sproutsimsb <- simulate(sprout_lm_compois, nsim=20) %>% #simulate new data using the lm
+  pivot_longer( #pivot in order to make one column with sim number and one with sim value
+    cols =everything(),
+    names_to = "sim",
+    values_to = "germinated"
+  )
+
+ggplot() + 
+  geom_density(data=sproutsimsb,
+               mapping=aes(x=germinated, group=sim), 
+               size=0.2) +
+  geom_density(data=sprouts, #original data
+            mapping=aes(x=germinated),
+           size=2, color="green") 
+#looks pretty good
+
+#Are residuals normal and homoskedastic?
+resids_b <- simulateResiduals(sprout_lm_compois) #generate residuals as an object because it takes a while to generate them
+plot(resids_b) #dispersion is fine
+
+```
+
+Running the rest of the models.
+
+```{r other poisson germ models}
+#Running a main effects model
+sprout_lm_compois_m <- glmmTMB(germinated ~ mom_pop + dad_pop + (1|block) + offset(log(total)), data=sprouts, family=compois(), control = glmmTMBControl(parallel = 7))
+
+#Running a null model
+sprout_lm_compois_n <- glmmTMB(germinated ~ 1 + (1|block) + offset(log(total)), data=sprouts, family=compois(), control = glmmTMBControl(parallel = 7))
+
+#model comparison####
+anova(sprout_lm_compois, sprout_lm_compois_m, sprout_lm_compois_n)
+
+#full model is the best. p = 0.002523. main effects is better than null, p = 2.526e-08
+
+summary(sprout_lm_compois)
+
+summary(sprout_lm_compois)
+#significant coefficients:
+#mom_popH. winteri  estimate    0.10988  se 0.04172   z 2.634 p 0.00845 **
+#dad_popHW                      0.07605    0.04339   1.753  0.07965 . 
+#dad_popPump                   -0.11835    0.04670  -2.534  0.01127 * 
+#mom_popPumpkin:dad_popHW       0.12696    0.06496   1.954  0.05066 .
+#mom_popH. winteri:dad_popPump  0.13326    0.06653   2.003  0.04518 *
+#mom_popPumpkin:dad_popPump     0.18617    0.06386   2.915  0.00355 **
+```
+
+```
+## Of the plants that do sprout, does parentage affect growth under normal conditions? What about drought conditions?
+
+###Does a model looking at mom and dad population and condition explain more variation in height growth than condition alone?
+
+```{r height growth check and plot}
+#load and check data
+growth <- read.csv("fig2_leaf_height_growth_data.csv")
+str(growth)
+summary(growth)
+miss_var_summary(growth)
+
+#Make block character data instead of integer
+#growth$Block <- as.character(growth$Block)
+
+#need to create predictor variables: mom_pop and dad_pop as well as cross and direction
+#This information is in the Group column (type of cross) and direction (which plant was mom and which was dad)
+
+#So first I want to make a column with both together
+growth$Group_Direction <- paste(growth$Group, growth$Direction, sep = "_")
+
+#Now I want to convert that information to the mom and dad of each cross
+#in two separate columns
+
+#make vectors for the crosses with each species as mom
+Hwmom <- c("A_a", "A_b", "B_a", "C_a")
+Hamom <- c("B_b", "D_a", "D_b", "E_a")
+Pumpmom <- c("C_b", "E_b", "F_a", "F_b")
+
+growth <- growth %>% 
+  mutate(mom=ifelse(Group_Direction %in% Hwmom, "Hw", #make a column mom. 
+                    #if Group_Direction is any value in Hwmom, mom=Hw. If not
+                    ifelse(Group_Direction %in% Hamom, "Ha", #if Group_Direction is in Hamom, mom=Ha. If not
+                           ifelse(Group_Direction %in% Pumpmom, "Pump", NA)))) #if Group_Direction is in Pumpmom, mom=Pump. If not, mom=NA
+
+#now repeat for dad
+
+#make vectors for different fathers of crosses
+Hwdad <- c("A_a", "A_b", "B_b", "C_b")
+Hadad <- c("B_a", "D_a", "D_b", "E_b")
+Pumpdad <- c("C_a", "E_a", "F_a", "F_b")
+
+#Now add a dad column using mutate and ifelse as with mom
+growth <- growth %>% 
+  mutate(dad=ifelse(Group_Direction %in% Hwdad, "Hw", 
+                    ifelse(Group_Direction %in% Hadad, "Ha", 
+                           ifelse(Group_Direction %in% Pumpdad, "Pump", NA)))) 
+
+#Now for the response variable
+growth <- growth %>%
+  mutate(height_change = (height_start_mm)-(height_end_mm)) %>%  #subtract height at final time point from height at initial time point
+  filter(!is.na(height_change))
+
+#plot data
+height_plot <- ggplot(data=growth,
+                      aes(x=dad,
+                          y=height_change,
+                          color=Condition))+
+  geom_jitter(width=0.3)+
+  facet_wrap(~mom)+
+  scale_color_viridis_d()+
+  theme_light()
+height_plot #hard to see a pattern
+
+```
+
+First I fit an interaction model.
+
+```{r growth interaction model}
+#Fit a model 
+#in which block is a random effect
+#mom, dad and condition are fixed effects
+#and height change is the response variable
+
+options(mc.cores = parallel::detectCores() - 1) #set number of cores brms can use
+
+height_lm <- brm(height_change ~ mom * dad * Condition + (1|Block),
+                     family = gaussian(link = "identity"),
+                     data = growth,
+                     file = "../brms_fits/winterii_height_lm2",
+                     chains = 3)
+#Evaluate assumptions
+#Bayes assumptions:
+library(bayesplot)
+color_scheme_set("viridis")
+
+#visually investigate chains
+plot(height_lm)#looks fine
+plot(height_lm, par = "b_Intercept")#Looks good
+
+mcmc_trace(height_lm)
+#need to zoom in to make the figure readable because there are so many images
+#but they look okay
+
+#Look at a diagnostic of convergence 
+rhat(height_lm)
+rhat(height_lm) %>% mcmc_rhat() #Looks fine
+
+# assess autocorrelation 
+mcmc_acf(height_lm) #looks fine
+
+#model assumptions
+
+#data matches chains
+pp_check(height_lm, "dens_overlay")
+#Looks good
+
+#is error normal
+pp_check(height_lm, "error_hist", bins = 10)
+pp_check(height_lm, "error_scatter_avg")
+#Looks good
+
+#check fitted values vs residuals
+height_res <- residuals(height_lm) %>% as_tibble
+height_fit <- fitted(height_lm) %>% as_tibble
+
+plot(y = height_res$Estimate, x = height_fit$Estimate)
+#Looks good
+
+#Are residuals normal and homoskedastic?
+height_model_check <- createDHARMa(
+  simulatedResponse = t(posterior_predict(height_lm)),
+  observedResponse = growth$height_change,
+  fittedPredictedResponse = apply(t(posterior_epred(height_lm)), 1, mean),
+  integerResponse = TRUE)
+
+plot(height_model_check)
+#dispersion is fine
+
+#See model coefficients ####
+summary(height_lm)
+fixef(height_lm)
+
+height_em <- emmeans(height_lm, ~mom*dad*Condition)
+height_contrast <- contrast(height_em, method="tukey", adjust='none')
+height_contrast #wow there sure are a lot of comparisons here
+#but before I really consider them I'll see if this model is better than an additive or null model
+
+```
+
+Then I fit a main effects model.
+
+```{r growth main effects}
+#fit main effects model
+height_lm_main <- brm(height_change ~ (mom+dad)*Condition + (1|Block),
+                      family = gaussian(link = "identity"),
+                     data = growth,
+                     file = "../brms_fits/winterii_height_lm_main5",
+                     chains = 3)
+#visually investigate chains
+plot(height_lm_main) #seems okay
+
+plot(height_lm_main, par = "b_Intercept") #seems okay
+
+mcmc_trace(height_lm_main) #looks fine
+
+#Look at a diagnostic of convergence 
+rhat(height_lm_main)
+rhat(height_lm_main) %>% mcmc_rhat() #Looks fine
+
+# assess autocorrelation 
+mcmc_acf(height_lm_main) #looks fine
+
+#model assumptions
+
+#data matches chains
+pp_check(height_lm_main, "dens_overlay") #Looks good
+
+#is error normal
+pp_check(height_lm_main, "error_hist", bins = 10) #looks fine
+pp_check(height_lm_main, "error_scatter_avg")
+#Looks good
+
+#check fitted values vs residuals
+height_res_m <- residuals(height_lm_main) %>% as_tibble
+height_fit_m <- fitted(height_lm_main) %>% as_tibble
+
+plot(y = height_res_m$Estimate, x = height_fit_m$Estimate)
+#Looks good
+```
+
+Then I fit a model in which the only condition (drought/no drought) is a predictor.
+
+```{r growth drought only model}
+#fit drought only model ####
+height_lm_condition <- brm(height_change ~ Condition + (1|Block),
+                     family = gaussian(link = "identity"),
+                     data = growth,
+                     file = "../brms_fits/winterii_height_lm_condition5",
+                     chains = 3)
+#visually investigate chains
+plot(height_lm_condition) #seems okay
+
+plot(height_lm_condition, par = "b_Intercept") #Looks good
+
+mcmc_trace(height_lm_condition) #looks fine
+
+#Look at a diagnostic of convergence 
+rhat(height_lm_condition)
+rhat(height_lm_condition) %>% mcmc_rhat() #Looks fine
+
+# assess autocorrelation 
+
+mcmc_acf(height_lm_condition) #looks a little high
+
+#model assumptions
+
+#data matches chains
+pp_check(height_lm_condition, "dens_overlay")
+#Looks good
+
+#is error normal
+pp_check(height_lm_condition, "error_hist", bins = 10)
+pp_check(height_lm_condition, "error_scatter_avg")
+#Looks good
+
+#check fitted values vs residuals
+height_res_c <- residuals(height_lm_condition) %>% as_tibble
+height_fit_c <- fitted(height_lm_condition) %>% as_tibble
+
+plot(y = height_res_c$Estimate, x = height_fit_c$Estimate)
+#Looks good
+
+#fit true 
+```
+
+Then I fit a random effects only model.
+
+```{r growth random effects only}
+#fit random effects only model
+height_lm_r <- brm(height_change ~ (1|Block),
+                     family = gaussian(link = "identity"),
+                     data = growth,
+                     file = "../brms_fits/winterii_height_lm_r5",
+                     chains = 3)
+#Evaluate assumptions
+#Bayes assumptions:
+
+#visually investigate chains
+plot(height_lm_r) #looks fine
+plot(height_lm_r, par = "b_Intercept") #Looks good
+mcmc_trace(height_lm_r) #looks fine
+#Look at a diagnostic of convergence 
+rhat(height_lm_r)
+rhat(height_lm_r) %>% mcmc_rhat()#Looks fine
+# assess autocorrelation 
+mcmc_acf(height_lm_r) #a bit high
+
+#model assumptions
+
+#data matches chains
+pp_check(height_lm_r, "dens_overlay")
+#Looks good
+
+#is error normal
+pp_check(height_lm_r, "error_hist", bins = 10) #looks fine
+pp_check(height_lm_r, "error_scatter_avg")#Looks fine
+
+#check fitted values vs residuals
+height_res_r <- residuals(height_lm_r) %>% as_tibble
+height_fit_r <- fitted(height_lm_r) %>% as_tibble
+
+plot(y = height_res_r$Estimate, x = height_fit_r$Estimate)
+#Looks good
+```
+
+I compared the models using loo cv.
+
+```{r growth model comparison}
+#compare the models ####
+
+height_loo <- loo(height_lm) #loo of model
+height_loo
+height_d_loo <- loo(height_lm_condition) #loo of drought only model
+height_d_loo
+height_m_loo <- loo(height_lm_main) #loo of main effects model
+height_r_loo <-loo(height_lm_r) #loo of random-effects only model
+
+loo_compare(height_loo, height_d_loo, height_m_loo, height_r_loo)
+#All the models are really similar
+
+```
+
+After comparing the four models, I found that there is no difference in predictive ability between an interaction model with parents and condition, an additive model with parents and condition, a model with condition alone, and a model with random effects only. 
+
+##Does a model looking at mom and dad population and condition explain more variation in leaf growth than condition alone?
+
+```{r leaf growth data wrangling and viz}
+#Same dataset as height growth
+#need to add response variable though
+growth <- growth %>%
+  mutate(leaf_change_rate = (log(N_leaf_start)-(log(N_leaf_end)))/28) %>%  #ln of last measure - ln of first measure/days
+  filter(leaf_change_rate!= Inf) %>% 
+  filter(leaf_change_rate!= -Inf)
+
+   
+#plot the data
+leaf_plot <- ggplot(data=growth,
+                      aes(x=dad,
+                          y=leaf_change_rate,
+                          color=Condition))+
+  geom_jitter(width=0.3)+
+  facet_wrap(~mom)+
+  scale_color_viridis_d()+
+  theme_light()
+leaf_plot #now there's sort of a pattern: growth is lower with drought, and seems to be lowest with pumpkin mom
+```
+
+I'm going to start with an interaction model with mom, dad, and condition as fixed effect and block as a random effect
+
+```{r leaf growth interaction model}
+#Fit a model 
+#in which block is a random effect
+#mom, dad and condition are fixed effects
+#and leaf change is the response variable
+
+leaf_lm <- brm(leaf_change_rate ~ mom*dad*Condition + (1|Block),
+                     family = gaussian(link="identity"),
+                     data = growth,
+                     file = "../brms_fits/winterii_leaf_lm6",
+                     chains = 3)
+#Evaluate assumptions
+#Bayes assumptions:
+
+#visually investigate chains
+plot(leaf_lm) #looks fine
+
+plot(leaf_lm, par = "b_Intercept") #Looks good
+
+mcmc_trace(leaf_lm) #look fine
+
+#Look at a diagnostic of convergence 
+rhat(leaf_lm)
+rhat(leaf_lm) %>% mcmc_rhat()#Looks fine
+
+# assess autocorrelation 
+
+mcmc_acf(leaf_lm) #looks fine
+
+#model assumptions
+
+#data matches chains
+pp_check(leaf_lm, "dens_overlay")
+#that's pretty messy. There's a lot more variation/structure in the data than the model, probably because it came from a low number of counts originally.
+
+#is error normal
+pp_check(leaf_lm, "error_hist", bins = 10) #looks fine
+pp_check(leaf_lm, "error_scatter_avg") #also looks fine
+#Looks good
+
+#check fitted values vs residuals
+leaf_res <- residuals(leaf_lm) %>% as_tibble
+leaf_fit <- fitted(leaf_lm) %>% as_tibble
+
+plot(y = leaf_res$Estimate, x = leaf_fit$Estimate)
+#something of a fan pattern, clustering around 0
+
+#I think the difference between predicted and actual data is because the data originally had few possible outcomes (pretty much every plant had 2, 4, 6, 8, 10, or 12 leaves) so there are only a few log rate values in the data, and the plot is predicting continuous values. 
+
+#I'm also going to try plotting the data in blmer
+library(blme)
+
+leaf_lm_blme <- blmer(leaf_change_rate ~ mom*dad*Condition + (1|Block), data=growth)
+
+#Check assumptions ####
+#Check distribution of predictions matches data
+leafsims <- simulate(leaf_lm_blme, nsim=20) %>% #simulate new data using the lm
+  pivot_longer( #pivot in order to make one column with sim number and one with sim value
+    cols =everything(),
+    names_to = "sim",
+    values_to = "leaf_change_rate"
+  )
+head(leafsims)
+
+ggplot() + #no data in the ggplot because each layer has its own data
+  geom_density(data=leafsims,
+               mapping=aes(x=leaf_change_rate, group=sim), 
+               size=0.2) +
+  geom_density(data=growth, #original data
+            mapping=aes(x=leaf_change_rate),
+           size=2, color="green")
+#Honestly, kind of weird. I think the issue is how it handles the proportion data. 
+
+#Are residuals normal and homoskedastic?
+
+resids <- simulateResiduals(leaf_lm_blme) #generate residuals as an object because it takes a while to generate them
+plot(resids) #doesn't look too bad
+
+leaf_lm_blme
+summary(leaf_lm_blme)
+
+#Are residuals normal and homoskedastic?
+leaf_model_check <- createDHARMa(
+  simulatedResponse = t(posterior_predict(leaf_lm)),
+  observedResponse = growth$leaf_change_rate,
+  fittedPredictedResponse = apply(t(posterior_epred(leaf_lm)), 1, mean),
+  integerResponse = TRUE)
+
+plot(height_model_check)
+#surprisingly the dispersion is okay
+
+#My model doesn't match my data very well, but all other assumptions seem to be met. I think the cause is that there were relatively few initial values the data could have. I am going to keep going with my analysis, because I am comparing models rather than explicitly making predictions based on models, but I am also going to be very cautious about interpreting my results. 
+
+#Note: I initially fit a model using (final leaves) - (initial) leaves as a response variable and a poisson error distribution. I had similar results: the model assumptions were met, but the model had one peak, while the original data had many. In addition, the model had a much lower peak than those of the original data, so on balance this response variable seems to result in a better model fit. 
+```
+
+For comparison, I fit a main effect only model.
+
+```{r leaf main effects}
+#fit main effects model
+leaf_lm_main <- brm(leaf_change_rate ~ (mom+dad)*Condition + (1|Block),
+                      family = gaussian(link = "identity"),
+                     data = growth,
+                     file = "../brms_fits/winterii_height_lm_main2",
+                     chains = 3)
+#visually investigate chains
+plot(leaf_lm_main) #seems okay
+
+plot(leaf_lm_main, par = "b_Intercept") #seems okay
+
+mcmc_trace(leaf_lm_main)#looks fine
+
+#Look at a diagnostic of convergence 
+rhat(leaf_lm_main)
+rhat(leaf_lm_main) %>% mcmc_rhat()
+#Looks fine
+
+# assess autocorrelation 
+
+mcmc_acf(leaf_lm_main)#looks fine
+
+
+#model assumptions
+
+#data matches chains
+pp_check(leaf_lm_main, "dens_overlay")
+#same problem as before: data have a more complicated shape
+
+#is error normal
+pp_check(leaf_lm_main, "error_hist", bins = 10) #looks fine
+pp_check(leaf_lm_main, "error_scatter_avg") #Looks good
+
+#check fitted values vs residuals
+leaf_res_m <- residuals(leaf_lm_main) %>% as_tibble
+leaf_fit_m <- fitted(leaf_lm_main) %>% as_tibble
+
+plot(y = leaf_res_m$Estimate, x = leaf_fit_m$Estimate) #Looks good
+
+```
+
+Also for comparison, I'm going to fit a model with condition as the only fixed effect.
+
+```{r leaf drought only model}
+#fit a drought-only model ####
+leaf_lm_c <- brm(leaf_change_rate ~ Condition + (1|Block),
+                     family = gaussian(link = "identity"),
+                     data = growth,
+                     file = "../brms_fits/winterii_leaf_lm_c2",
+                     chains = 3)
+#test Bayes assumptions
+#visually investigate chains
+plot(leaf_lm_c) #looks fine
+
+plot(leaf_lm_c, par = "b_Intercept") #Looks good
+
+mcmc_trace(leaf_lm_c) #seems fine
+
+#Look at a diagnostic of convergence 
+rhat(leaf_lm_c)
+
+rhat(leaf_lm_c) %>% mcmc_rhat()
+#Looks fine
+
+# assess autocorrelation 
+
+mcmc_acf(leaf_lm_c) #most seem fine, some look a bit autocorrelated
+
+#model assumptions
+
+#data matches chains
+pp_check(leaf_lm_c, "dens_overlay")
+#model still doesn't have all the peaks from the original data
+
+#is error normal
+pp_check(leaf_lm_c, "error_hist", bins = 10) #looks fine
+pp_check(leaf_lm_c, "error_scatter_avg") #Looks fine
+
+#check fitted values vs residuals
+leaf_res_c <- residuals(leaf_lm_c) %>% as_tibble
+leaf_fit_c <- fitted(leaf_lm_c) %>% as_tibble
+
+plot(y = leaf_res_c$Estimate, x = leaf_fit_c$Estimate) #Looks fine
+```
+
+I will also fit a null model with random effects only. 
+
+```{r leaf null model}
+#fit a null model ####
+leaf_lm_n <- brm(leaf_change_rate ~ (1|Block),
+                     family = gaussian(link = "identity"),
+                     data = growth,
+                     file = "../brms_fits/winterii_leaf_lm_n2",
+                     chains = 3)
+#test Bayes assumptions
+#visually investigate chains
+plot(leaf_lm_n)#looks fine
+plot(leaf_lm_n, par = "b_Intercept") #Looks good
+mcmc_trace(leaf_lm_n)#seems fine
+
+#Look at a diagnostic of convergence 
+rhat(leaf_lm_n)
+rhat(leaf_lm_n) %>% mcmc_rhat()#Looks fine
+
+#assess autocorrelation 
+mcmc_acf(leaf_lm_n)
+#most seem fine, some are autocorrelated
+
+#model assumptions
+
+#data matches chains
+pp_check(leaf_lm_n, "dens_overlay")
+#predicted distribution is, again, a similar height to original data, but has one peak instead of four
+
+#is error normal
+pp_check(leaf_lm_n, "error_hist", bins = 10) #looks good
+pp_check(leaf_lm_n, "error_scatter_avg") #Looks good
+
+#check fitted values vs residuals
+leaf_res_n <- residuals(leaf_lm_n) %>% as_tibble
+leaf_fit_n <- fitted(leaf_lm_n) %>% as_tibble
+
+plot(y = leaf_res_n$Estimate, x = leaf_fit_n$Estimate)#Looks good
+```
+
+Then I compared the models using leave one out cross validation.
+
+```{r leaf comaparison}
+#model comparison ####
+loo_leaf_lm <- loo(leaf_lm)
+loo_leaf_lm_main <- loo(leaf_lm_main)
+loo_leaf_lm_c <- loo(leaf_lm_c)
+loo_leaf_lm_n <- loo(leaf_lm_n)
+
+loo_compare(loo_leaf_lm, loo_leaf_lm_c, loo_leaf_lm_n, loo_leaf_lm_main)
+
+#Not really any difference between the models for leaf growth either. However, the interaction model does seem somewhat worse, and the no-drought model is defintely worse
+```
+
+The interaction model seems to have a somewhat lower log predictive density than the main effects model (ELPD difference= -5.1, standard error of the difference=2.7). However, there was little difference in log predictive density between the main effects model, the condition-only model, and the random effects model. This seems to suggest that incompatibility between certain crosses is not affecting leaf growth under either drought or well-watered conditions, and the interaction model may be overfit. However, the main effects model and condition model are also no better at predicting variation than the null model. Also, the distribution of predicted values from all values did not match the original data's shape, which suggests the predictive ability of all models is limited.  
+
+##Does parentage affect plant drought survival?
+
+```{r drought deaths plot and data wrangle}
+#load and check data
+deaths <- read.csv("fig2_drought_deaths.csv")
+str(deaths)
+summary(deaths)
+
+#Add columns for mom and dad
+#make group direction column
+deaths$Group_Direction <- paste(deaths$group, deaths$direction, sep = "_")
+#Same vectors as before apply
+deaths <- deaths %>% 
+  mutate(mom=ifelse(Group_Direction %in% Hwmom, "Hw", #make a column mom. 
+                    #if Group_Direction is any value in Hwmom, mom=Hw. If not
+                    ifelse(Group_Direction %in% Hamom, "Ha", #if Group_Direction is in Hamom, mom=Ha. If not
+                           ifelse(Group_Direction %in% Pumpmom, "Pump", NA)))) #if Group_Direction is in Pumpmom, mom=Pump. If not, mom=NA
+
+#Now add a dad column 
+deaths <- deaths %>% 
+  mutate(dad=ifelse(Group_Direction %in% Hwdad, "Hw", 
+                    ifelse(Group_Direction %in% Hadad, "Ha", 
+                           ifelse(Group_Direction %in% Pumpdad, "Pump", NA)))) %>% 
+  filter(!is.na(days_to_death))
+
+#plot data
+deaths_plot <- ggplot(data=deaths,
+                      aes(x=dad,
+                          y=days_to_death,
+                          color=block))+
+  geom_jitter(width=0.3)+
+  facet_wrap(~mom)+
+  scale_color_viridis_d()+
+  theme_light()
+deaths_plot #means look similar but there might be some differences in ranges
+
+library(stringr)
+deaths <- deaths %>% 
+  mutate(mom = str_replace_all(mom, "Ha", "Sympatric H. annuus")) %>% 
+  mutate(mom = str_replace_all(mom, "Hw", "H. winteri")) %>% 
+  mutate(mom = str_replace_all(mom, "Pump", "Allopatric H. annuus")) 
+
+prof_deaths_plot <- ggplot(data=deaths,
+                      aes(x=dad,
+                          y=days_to_death,
+                          color=dad))+
+  geom_boxplot(outliers=F)+
+  geom_jitter(width=0.3, size=0.3, alpha=0.8)+
+  facet_grid(~mom)+
+  scale_color_manual(values = c("Hw" = "#225ea8",
+                                "Ha" ="#a1d99b",
+                                "Pump"="#31a354")) +
+  theme_light(base_size = 6)+
+  xlab("Paternal Population")+ #need to add axis/facet/key labels
+  ylab("Days to Death")+
+  scale_x_discrete(labels = c('Sympatric H. annuus','H. winteri','Allopatric H. annuus'))+ #makes x axis labels neater
+  theme(legend.position = "none")+
+  theme(axis.text.x=element_text(angle = 25, hjust = 0.82))+
+  ggtitle("B")
+
+prof_deaths_plot
+ggsave("prof_deaths_plot.png", width=10, height= 6, units="in")
+#for Mol Ecol submission
+#ggsave("/home/alice/Desktop/Grad_School_Files/Research/winterii/sequencedata/AlignedData/figures/deaths_prof_plot.pdf", width=80, height= 48, units="mm")
+ggsave("/home/alice/Documents/grad_school_files/winteri_figures/deaths_boxes_plot.pdf", width=80, height= 48, units="mm")
+
+#combining with sprouts plot
+
+library(patchwork)
+combined_plot <- sprouts_prof_plot/prof_deaths_plot
+ggsave("/home/alice/Documents/grad_school_files/winteri_figures/combined_box_plot.pdf", width=80, height= 96, units="mm")
+ggsave("/home/alice/Documents/grad_school_files/winteri_figures/combined_box_plot.png", width=80, height= 96, units="mm")
+ggsave("/home/alice/Documents/grad_school_files/winteri_figures/combined_box_double_x_label.pdf", width=80, height= 96, units="mm")
+
+```
+
+I first fit an interaction model.
+
+```{r deaths interaction model}
+#fit a model for deaths ####
+#response variable: days_to_death
+#fixed effects: mom, dad
+#random effects: block
+deaths_lm <- brm(days_to_death ~ mom*dad + (1|block),
+                     family = poisson(),
+                     data = deaths,
+                     file = "../brms_fits/winterii_deaths_lm2",
+                     chains = 3)
+#bayes assumptions
+
+#visually investigate chains
+plot(deaths_lm) #looks fine
+plot(deaths_lm, par = "b_Intercept") #Looks good
+
+mcmc_trace(deaths_lm) #looks fine
+
+#Look at a diagnostic of convergence 
+rhat(deaths_lm)
+rhat(deaths_lm) %>% mcmc_rhat() #Looks fine
+
+# assess autocorrelation 
+
+mcmc_acf(deaths_lm) #looks fine 
+
+#model assumptions
+
+#data matches chains
+pp_check(deaths_lm, "dens_overlay")
+#not really the right shape: not as tall in the middle as the actual data
+
+#is error normal
+pp_check(deaths_lm, "error_hist", bins = 10) #mostly normal?? with some too-tall bins
+pp_check(deaths_lm, "error_scatter_avg")
+#Looks good
+
+#check fitted values vs residuals
+deaths_res <- residuals(deaths_lm) %>% as_tibble
+deaths_fit <- fitted(deaths_lm) %>% as_tibble
+
+plot(y = deaths_res$Estimate, x = deaths_fit$Estimate)
+#Looks good
+
+#Are residuals normal and homoskedastic?
+death_model_check <- createDHARMa(
+  simulatedResponse = t(posterior_predict(deaths_lm)),
+  observedResponse = deaths$days_to_death,
+  fittedPredictedResponse = apply(t(posterior_epred(deaths_lm)), 1, mean),
+  integerResponse = TRUE)
+
+plot(death_model_check)
+#probably overdispersed. lemme redo this with a neg binomial distribution
+
+#death model with negative binomial
+deaths_lm2 <- brm(days_to_death ~ mom*dad + (1|block),
+                     family = negbinomial(),
+                     data = deaths,
+                     file = "../brms_fits/winterii_deaths_lm3",
+                     chains = 3)
+#bayes assumptions
+
+#visually investigate chains
+plot(deaths_lm2) #looks fine
+plot(deaths_lm2, par = "b_Intercept") #Looks good
+
+mcmc_trace(deaths_lm) #looks fine
+
+#Look at a diagnostic of convergence 
+rhat(deaths_lm2)
+rhat(deaths_lm2) %>% mcmc_rhat() #Looks fine
+
+# assess autocorrelation 
+
+mcmc_acf(deaths_lm2) #looks fine 
+
+#model assumptions
+
+#data matches chains
+pp_check(deaths_lm2, "dens_overlay")
+#seems better
+
+#is error normal
+pp_check(deaths_lm2, "error_hist", bins = 10) #mostly normal?? with some too-tall bins
+pp_check(deaths_lm2, "error_scatter_avg")
+#Looks good
+
+#check fitted values vs residuals
+deaths_res <- residuals(deaths_lm) %>% as_tibble
+deaths_fit <- fitted(deaths_lm) %>% as_tibble
+
+plot(y = deaths_res$Estimate, x = deaths_fit$Estimate)
+#Looks good
+
+#Are residuals normal and homoskedastic?
+death_model_check2 <- createDHARMa(
+  simulatedResponse = t(posterior_predict(deaths_lm2)),
+  observedResponse = deaths$days_to_death,
+  fittedPredictedResponse = apply(t(posterior_epred(deaths_lm2)), 1, mean),
+  integerResponse = TRUE)
+
+plot(death_model_check2)
+#this is worse
+```
+
+
+```{r deaths com poisson model}
+#seeing if com poisson distribution helps with dispersion issues
+core_number <- parallel::detectCores() - 1
+death_lm_compois <- glmmTMB(days_to_death ~ mom * dad + (1|block), 
+                            data=deaths, 
+                            family=compois(), 
+                            control = glmmTMBControl(parallel = 7)) #runs in parallel. 7 = total cores-1
+
+#Check assumptions
+#Check distribution of predictions matches data
+deathssimsb <- simulate(death_lm_compois, nsim=20) %>% #simulate new data using the lm
+  pivot_longer( #pivot in order to make one column with sim number and one with sim value
+    cols =everything(),
+    names_to = "sim",
+    values_to = "days_to_death"
+  )
+
+ggplot() + 
+  geom_density(data=deathssimsb,
+               mapping=aes(x=days_to_death, group=sim), 
+               size=0.2) +
+  geom_density(data=deaths, #original data
+            mapping=aes(x=days_to_death),
+           size=2, color="green") 
+#looks pretty good
+
+#Are residuals normal and homoskedastic?
+resids_b <- simulateResiduals(death_lm_compois) #generate residuals as an object because it takes a while to generate them
+plot(resids_b) #dispersion is fine
+
+death_lm_compois_m <- glmmTMB(days_to_death ~ mom + dad +(1|block), data=deaths, family=compois(), control = glmmTMBControl(parallel = 7))
+```
+```{r deaths con poisson model comparison}
+#main effects model
+death_lm_compois_m <- glmmTMB(days_to_death ~ mom + dad +(1|block), 
+                              data=deaths, 
+                              family=compois(),
+                              control = glmmTMBControl(parallel = 7))
+deaths_lm_compois_n <- glmmTMB(days_to_death ~ 1+(1|block), 
+                              data=deaths, 
+                              family=compois(),
+                              control = glmmTMBControl(parallel = 7))
+anova(death_lm_compois, death_lm_compois_m, deaths_lm_compois_n)
+
+anova(death_lm_compois, death_lm_compois_m)
+anova(death_lm_compois_m, deaths_lm_compois_n)
+
+death_em <- emmeans(death_lm_compois_m, ~mom+dad)
+death_contrast <- contrast(death_em, method="tukey", adjust='none')
+death_contrast
+
+summary(death_lm_compois_m)
+#momH. winteri estimate -0.07995    se 0.03390   z -2.36  p 0.0184 *  
+#momPumpkin             -0.07160    0.03358   -2.13   0.0330 * 
+
+summary(death_lm_compois)
+
+
+```
+
+There is no real difference in predictive ability among the four models--differences in log predictive density are small relative to their standard errors. Therefore, a model with an interaction between parents is no better at predicting drought survival in out-of-sample individuals than a model with main effect only or random effects only. 
+
+#Does parentage affect how much viable pollen the F1 plants produce?
+
+```{r final pollen}
+#load and check data
+pollen <- read.csv("fig2_pollen.csv")
+str(pollen)
+summary(pollen)
+
+#make a column for dad population
+
+#first group direction column
+pollen$group_direction <- paste(pollen$group, pollen$direction, sep = "_")
+#Now add a dad column using mutate and ifelse as with mom
+pollen <- pollen %>% 
+  mutate(dad=ifelse(group_direction %in% Hwdad, "Hw", 
+                    ifelse(group_direction %in% Hadad, "Ha", 
+                           ifelse(group_direction %in% Pumpdad, "Pump", NA)))) 
+#fix mom column so that Hw=W
+pollen$mom_pop = as.character(pollen$mom_pop) #change mom_pop to factor
+pollen$mom_pop[pollen$mom_pop == "W"] <- "HW" #assign Ws to be HWs
+pollen$mom_pop = as.factor(pollen$mom_pop) #then change back to factor
+
+
+#pivot stained pollen columns and unstained pollen columns so that all flowers from the same plant are together
+#but first add a column for individual plants
+pollen <- pollen %>% 
+  mutate(plant=1:314)
+
+#make block a factor
+pollen$block <- as.factor(pollen$block)
+
+#okay so based on the output of this
+#the mom_pop data was entered incorrectly: some winterii plants were entered as HW and some as W. So I went back and fixed that
+
+#going to try again using poisson distribution
+#with stained seeds (total per plant) as the response variable 
+#and total seeds as a the offset
+
+#need total_stained = st1 + st2 + st3
+pollen <- pollen %>% 
+  rowwise %>% 
+  mutate(total_stained = sum(st1,st2,st3, na.rm=T), total_total = sum(total_stained, un1, w1, un2, w2, un3, w3, na.rm = T)) %>% #and total_total = sum(st1:w3)
+  filter(total_total != 0) #remove rows with no pollen at all
+```
+
+
+```{r pollen poisson full model}
+
+pollen_lm1 <- brm(total_stained ~ mom_pop*dad*treatment +offset(log(total_total)) + (1|block),
+                     family = poisson(link="identity"),
+                     data = pollen,
+                     file = "../brms_fits/winterii_pollen_lmpoisson_newer",
+                     chains = 3,
+                     save_pars = save_pars(all=TRUE))
+#bayes assumptions
+
+#visually investigate chains
+plot(pollen_lm1) #looks fine
+plot(pollen_lm1, variable = "b_Intercept") #Looks good
+
+mcmc_trace(pollen_lm1) #looks fine
+
+#Look at a diagnostic of convergence 
+rhat(pollen_lm1)
+rhat(pollen_lm1) %>% mcmc_rhat() #Looks fine
+
+# assess autocorrelation 
+
+mcmc_acf(pollen_lm1) #looks fine 
+
+#model assumptions
+
+#data matches chains
+pp_check(pollen_lm1, "dens_overlay")
+#not really the right shape
+
+#is error normal
+pp_check(pollen_lm1, "error_hist", bins = 10) #mostly the right shape, but biased to the left
+pp_check(pollen_lm1, "error_scatter_avg")
+#Looks good
+
+#check fitted values vs residuals
+pollen_res <- residuals(pollen_lm1) %>% as_tibble
+pollen_fit <- fitted(pollen_lm1) %>% as_tibble
+
+plot(y = seedset_res$Estimate, x = seedset_fit$Estimate)
+#Looks pretty good
+
+#check for overdispersion
+#try performance package from easy stats set
+#has a check overdispersion function
+
+
+#can also check in dHarma 
+pollen_model_check <- createDHARMa(
+  simulatedResponse = t(posterior_predict(pollen_lm1)),
+  observedResponse = pollen$total_stained,
+  fittedPredictedResponse = apply(t(posterior_epred(pollen_lm1)), 1, mean),
+  integerResponse = TRUE)
+
+plot(pollen_model_check)
+#yeah this looks really bad. way too few intermediate values
+#need a different error distribution
+
+#trying pollen with neg binomial error distributions####
+pollen_lm2 <- brm(total_stained ~ mom_pop*dad*treatment +offset(log(total_total)) + (1|block),
+                     family = negbinomial(),
+                     data = pollen,
+                     file = "../brms_fits/winterii_pollen_lmpoisson_newer2",
+                     chains = 3,
+                     save_pars = save_pars(all=TRUE))
+#bayes assumptions
+
+#visually investigate chains
+plot(pollen_lm2) #looks fine
+plot(pollen_lm2, variable = "b_Intercept") #Looks good
+
+mcmc_trace(pollen_lm2) #looks fine
+
+#Look at a diagnostic of convergence 
+rhat(pollen_lm2)
+rhat(pollen_lm2) %>% mcmc_rhat() #Looks fine
+
+# assess autocorrelation 
+
+mcmc_acf(pollen_lm2) #looks fine 
+
+#model assumptions
+
+#data matches chains
+pp_check(pollen_lm2, "dens_overlay")
+#oh that looks great! yay!
+
+#is error normal
+pp_check(pollen_lm2, "error_hist", bins = 10) #looks nice
+pp_check(pollen_lm2, "error_scatter_avg")
+#clustered around 0. check what this means
+
+#check fitted values vs residuals
+pollen_res <- residuals(pollen_lm2) %>% as_tibble
+pollen_fit <- fitted(pollen_lm2) %>% as_tibble
+
+plot(y = seedset_res$Estimate, x = seedset_fit$Estimate)
+#Looks pretty good
+
+#check for overdispersion
+pollen_model_check2 <- createDHARMa(
+  simulatedResponse = t(posterior_predict(pollen_lm2)),
+  observedResponse = pollen$total_stained,
+  fittedPredictedResponse = apply(t(posterior_epred(pollen_lm2)), 1, mean),
+  integerResponse = TRUE)
+
+plot(pollen_model_check2)
+
+#officially still overdispersed and fails DHARMa's tests. I'm going to also run with individual as a random effect.
+pollen_lm3 <- brm(total_stained ~ mom_pop*dad*treatment +offset(log(total_total)) + (1|block) + (1|plant),
+                     family = negbinomial(),
+                     data = pollen,
+                     file = "../brms_fits/winterii_pollen_lmpoisson_newer3",
+                     chains = 3,
+                     save_pars = save_pars(all=TRUE))
+#bayes assumptions
+
+#visually investigate chains
+plot(pollen_lm3) #looks fine
+plot(pollen_lm3, variable = "b_Intercept") #Looks good
+
+mcmc_trace(pollen_lm2) #looks fine
+
+#Look at a diagnostic of convergence 
+rhat(pollen_lm3)
+rhat(pollen_lm3) %>% mcmc_rhat() #Looks fine
+
+# assess autocorrelation 
+
+mcmc_acf(pollen_lm3) #looks fine 
+
+#model assumptions
+
+#data matches chains
+pp_check(pollen_lm3, "dens_overlay")
+#looks good
+
+#is error normal
+pp_check(pollen_lm3, "error_hist", bins = 10) #looks nice
+pp_check(pollen_lm3, "error_scatter_avg")
+#still clustered around 0. check what this means
+
+#check fitted values vs residuals
+pollen_res <- residuals(pollen_lm3) %>% as_tibble
+pollen_fit <- fitted(pollen_lm3) %>% as_tibble
+
+plot(y = seedset_res$Estimate, x = seedset_fit$Estimate)
+#Looks pretty good
+
+#can also check in dHarma 
+pollen_model_check3 <- createDHARMa(
+  simulatedResponse = t(posterior_predict(pollen_lm3)),
+  observedResponse = pollen$total_stained,
+  fittedPredictedResponse = apply(t(posterior_epred(pollen_lm3)), 1, mean),
+  integerResponse = TRUE)
+
+plot(pollen_model_check3)
+#this did not help
+#proceeding for now with regular negative binomial model
+
+
+```
+
+
+```{r pollen model comparison}
+pollen_lm_m2 <- brm(total_stained ~ (mom_pop+dad)*treatment +offset(log(total_total))+ (1|block),
+                     family = negbinomial(),
+                     data = pollen,
+                     file = "../brms_fits/winterii_pollen_lmpoisson_m2",
+                     chains = 3)
+#data matches chains
+pp_check(pollen_lm_m2, "dens_overlay")
+#seems pretty similar to original. perhaps a bit less good
+
+pollen_lm_c2 <- brm(total_stained ~ treatment +offset(log(total_total))+(1|block),
+                     family = negbinomial(),
+                     data = pollen,
+                     file = "../brms_fits/winterii_pollen_lmpoisson_c2",
+                     chains = 3)
+#data matches chains
+pp_check(pollen_lm_c2, "dens_overlay")
+#still seems pretty similar to original
+
+pollen_lm_n2 <- brm(total_stained ~ 1 +offset(log(total_total))+(1|block),
+                     family = negbinomial(),
+                     data = pollen,
+                     file = "../brms_fits/winterii_pollen_lmpoisson_n3",
+                     chains = 3)
+#data matches chains
+pp_check(pollen_lm_n2, "dens_overlay")
+#probably worse than original?
+
+#compare models
+loo_pollen_lm <- loo(pollen_lm2) 
+loo_pollen_m <- loo(pollen_lm_m2) 
+loo_pollen_c <-loo(pollen_lm_c2) 
+loo_pollen_n <- loo(pollen_lm_n2) 
+
+loo_compare(loo_pollen_lm, loo_pollen_m, loo_pollen_c, loo_pollen_n)
+#all are very close to each other
+
+#looking at full model coefficients
+summary(pollen_lm2)
+```
+
+```{r pollen plot}
+pollen_plot <- ggplot(data=pollen,
+                      mapping=aes(x=dad,
+                                  y=(total_stained/total_total),
+                                  color=block))+
+  geom_jitter(width=0.3)+
+  facet_wrap(~mom_pop)+
+  scale_color_viridis_d()+
+  theme_light()
+pollen_plot  
+```
+
+
