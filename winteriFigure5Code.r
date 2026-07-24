@@ -69,16 +69,18 @@ stemDensityPlot <- ggplot(data=farmData,
                            aes(x=pop, y=stem_density, color=metapop))+
   geom_boxplot(outliers=F)+
   geom_jitter(width=0.3, size=0.3, alpha=0.8)+
-  scale_color_manual(values = c("HW" = "#225ea8", 
+  scale_color_manual(values = c("HW" = "#225ea8", #change colors
                                 "HA_s" ="#a1d99b",
-                                "HA_a"="#31a354")) + #change colors
+                                "HA_a"="#31a354"),
+                     name = "", #remove legend title
+                     labels = c("Allopatric H. annuus", "Sympatric H. annuus", "H. winteri")) + 
   theme_light(base_size = 6)+ #change theme
   xlab("")+ #need to add axis/facet/key labels
   ylab("Stem Density")+
   scale_x_discrete(labels = c('Academy','Canal','Del Rey', 'Boyd', 'Valley', 'Yokuts', 'Manteca', 'Mountain'))+ #change population labels to full names
-  theme(legend.position = "none")+ #will add for right-most figure
+  theme(legend.position = "bottom")+ #will add for right-most figure
   theme(axis.text.x=element_text(angle = 25, hjust = 0.82))+
-  ggtitle("D")#add letter title for multipanel figure
+  ggtitle("C")#add letter title for multipanel figure
 stemDensityPlot
 
 farmData %>% 
@@ -117,9 +119,9 @@ fDaysPlot <- ggplot(data=farmData,
   xlab("")+ #need to add axis/facet/key labels
   ylab("Days to Flowering")+
   scale_x_discrete(labels = c('Academy','Canal','Del Rey', 'Boyd', 'Valley', 'Yokuts', 'Manteca', 'Mountain'))+ #change population labels to full names
-  theme(legend.position = "right")+ #will add for right-most figure
+  theme(legend.position = "none")+ #will add for right-most figure
   theme(axis.text.x=element_text(angle = 25, hjust = 0.82))+
-  ggtitle("E")#add letter title for multipanel figure
+  ggtitle("D")#add letter title for multipanel figure
 fDaysPlot
 
 
@@ -182,8 +184,7 @@ circumPlot <- ggplot(data=farmData,
   ylab("Stem Circumference")+
   scale_x_discrete(labels = c('Academy','Canal','Del Rey', 'Boyd', 'Valley', 'Yokuts', 'Manteca', 'Mountain'))+ #change population labels to full names
   theme(legend.position = "none")+ #will add for right-most figure
-  theme(axis.text.x=element_text(angle = 25, hjust = 0.82))+
-  ggtitle("B")#add letter title for multipanel figure
+  theme(axis.text.x=element_text(angle = 25, hjust = 0.82))
 circumPlot
 
 #Anova of branches ####
@@ -208,16 +209,18 @@ branchesPlot <- ggplot(data=farmData,
                           aes(x=pop, y=total_br, color=metapop))+
   geom_boxplot(outliers=F)+
   geom_jitter(width=0.3, size=0.3, alpha=0.8)+
-  scale_color_manual(values = c("HW" = "#225ea8", 
+  scale_color_manual(values = c("HW" = "#225ea8", #change colors
                                 "HA_s" ="#a1d99b",
-                                "HA_a"="#31a354")) + #change colors
+                                "HA_a"="#31a354"),
+                     name = "", #remove legend title
+                     labels = c("Allopatric H. annuus", "Sympatric H. annuus", "H. winteri")) + 
   theme_light(base_size = 6)+ #change theme
   xlab("")+ #need to add axis/facet/key labels
   ylab("Total Branches")+
   scale_x_discrete(labels = c('Academy','Canal','Del Rey', 'Boyd', 'Valley', 'Yokuts', 'Manteca', 'Mountain'))+ #change population labels to full names
   theme(legend.position = "none")+ #will add for right-most figure
   theme(axis.text.x=element_text(angle = 25, hjust = 0.82))+
-  ggtitle("C")#add letter title for multipanel figure
+  ggtitle("B")#add letter title for multipanel figure
 
 branchesPlot
 
@@ -319,6 +322,13 @@ plot(br_winteri, which=c(1,2,4,5))
 #ANOVA
 Anova(br_winteri) #pop is not significant
 #pop: p = 0.543
+
+#patchwork figure and save
+patchwork_plot <- (heightPlot + branchesPlot)/(stemDensityPlot + fDaysPlot)
+patchwork_plot
+
+ggsave("/home/alice/Documents/grad_school_files/Research/winterii/PaperFigures/figure5.pdf", width=80, height= 48, units="mm")
+ggsave("/home/alice/Documents/grad_school_files/Research/winterii/PaperFigures/figure5.png", width=80, height= 48, units="mm")
 
 #Overall results: ####
 
